@@ -2,13 +2,11 @@
 
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Activity } from "lucide-react";
 import {
   physicalInfoSchema,
   type PhysicalInfoFormData,
 } from "@/lib/schemas/onboarding-schema";
 import { useOnboardingStore } from "@/lib/stores/onboarding-store";
-import { calculateBMI, getBMICategory } from "@/lib/utils/format-helpers";
 import {
   HEIGHT_FEET_OPTIONS,
   HEIGHT_INCHES_OPTIONS,
@@ -53,17 +51,6 @@ export function StepPhysical({ onNext, onBack }: StepPhysicalProps) {
       tobaccoUse: physicalInfo.tobaccoUse ?? SMART_DEFAULTS.tobaccoUse,
     },
   });
-
-  const heightFeet = form.watch("heightFeet");
-  const heightInches = form.watch("heightInches");
-  const weight = form.watch("weight");
-
-  // Calculate BMI in real-time
-  const bmi =
-    heightFeet && heightInches && weight
-      ? calculateBMI(heightFeet, heightInches, weight)
-      : null;
-  const bmiCategory = bmi ? getBMICategory(bmi) : null;
 
   const onSubmit = (data: PhysicalInfoFormData) => {
     updatePhysicalInfo(data);
@@ -178,25 +165,6 @@ export function StepPhysical({ onNext, onBack }: StepPhysicalProps) {
                 </FormItem>
               )}
             />
-
-            {/* BMI Display */}
-            {bmi && bmiCategory && (
-              <div className="rounded-lg border bg-muted/50 p-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <Activity className="h-4 w-4 text-primary" />
-                  <span className="font-medium">Your BMI</span>
-                </div>
-                <div className="flex items-baseline gap-2">
-                  <span className="text-3xl font-bold">{bmi}</span>
-                  <span className={`text-sm font-medium ${bmiCategory.color}`}>
-                    {bmiCategory.label}
-                  </span>
-                </div>
-                <p className="text-xs text-muted-foreground mt-2">
-                  Body Mass Index (BMI) is used for health risk assessment
-                </p>
-              </div>
-            )}
 
             {/* Tobacco Use */}
             <FormField

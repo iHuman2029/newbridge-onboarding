@@ -3,7 +3,7 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState, useRef, useEffect } from "react";
-import { MapPin } from "lucide-react";
+import { MapPin, ChevronDown, Check } from "lucide-react";
 import {
   contactInfoSchema,
   type ContactInfoFormData,
@@ -11,6 +11,7 @@ import {
 import { useOnboardingStore } from "@/lib/stores/onboarding-store";
 import { formatPhone, formatZipCode } from "@/lib/utils/format-helpers";
 import { useAddressAutocomplete } from "@/hooks/use-address-autocomplete";
+import { US_STATES } from "@/lib/constants/form-options";
 import {
   Form,
   FormControl,
@@ -23,6 +24,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
 
 interface StepContactProps {
   onNext: () => void;
@@ -32,7 +34,10 @@ interface StepContactProps {
 export function StepContact({ onNext, onBack }: StepContactProps) {
   const { contactInfo, updateContactInfo } = useOnboardingStore();
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [showStateDropdown, setShowStateDropdown] = useState(false);
+  const [stateSearchQuery, setStateSearchQuery] = useState("");
   const suggestionsRef = useRef<HTMLDivElement>(null);
+  const stateDropdownRef = useRef<HTMLDivElement>(null);
 
   const form = useForm<ContactInfoFormData>({
     resolver: zodResolver(contactInfoSchema),
@@ -62,6 +67,15 @@ export function StepContact({ onNext, onBack }: StepContactProps) {
     setShowSuggestions(false);
   });
 
+  // Filter states based on search query
+  const filteredStates = US_STATES.filter((state) => {
+    const query = stateSearchQuery.toLowerCase();
+    return (
+      state.label.toLowerCase().includes(query) ||
+      state.value.toLowerCase().includes(query)
+    );
+  });
+
   // Handle click outside to close suggestions
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -70,6 +84,12 @@ export function StepContact({ onNext, onBack }: StepContactProps) {
         !suggestionsRef.current.contains(event.target as Node)
       ) {
         setShowSuggestions(false);
+      }
+      if (
+        stateDropdownRef.current &&
+        !stateDropdownRef.current.contains(event.target as Node)
+      ) {
+        setShowStateDropdown(false);
       }
     };
 
@@ -170,27 +190,67 @@ export function StepContact({ onNext, onBack }: StepContactProps) {
             />
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* State (Auto-filled, editable) */}
+              {/* State (Auto-filled, searchable) */}
               <FormField
                 control={form.control}
                 name="state"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>State *</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="AL"
-                        {...field}
-                        onChange={(e) => {
-                          const value = e.target.value.toUpperCase().slice(0, 2);
-                          field.onChange(value);
-                        }}
-                        className="text-base uppercase"
-                        maxLength={2}
-                      />
-                    </FormControl>
+                    <div className="relative" ref={stateDropdownRef}>
+                      <FormControl>
+                        <div className="relative">
+                          <Input
+                            placeholder="Type to search states..."
+                            value={
+                              field.value
+                                ? US_STATES.find((s) => s.value === field.value)
+                                    ?.label || field.value
+                                : stateSearchQuery
+                            }
+                            onChange={(e) => {
+                              setStateSearchQuery(e.target.value);
+                              setShowStateDropdown(true);
+                            }}
+                            onFocus={() => setShowStateDropdown(true)}
+                            className="text-base pr-10"
+                          />
+                          <ChevronDown className="absolute right-3 top-3 h-4 w-4 text-muted-foreground pointer-events-none" />
+                        </div>
+                      </FormControl>
+
+                      {/* State Dropdown */}
+                      {showStateDropdown && filteredStates.length > 0 && (
+                        <div className="absolute z-50 mt-1 w-full rounded-md border bg-popover shadow-lg">
+                          <div className="max-h-60 overflow-auto p-1">
+                            {filteredStates.map((state) => (
+                              <button
+                                key={state.value}
+                                type="button"
+                                className={cn(
+                                  "w-full rounded-sm px-3 py-2 text-left text-sm hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground flex items-center justify-between",
+                                  field.value === state.value && "bg-accent"
+                                )}
+                                onClick={() => {
+                                  field.onChange(state.value);
+                                  setStateSearchQuery("");
+                                  setShowStateDropdown(false);
+                                }}
+                              >
+                                <span>
+                                  {state.label} ({state.value})
+                                </span>
+                                {field.value === state.value && (
+                                  <Check className="h-4 w-4" />
+                                )}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
                     <FormDescription className="text-xs">
-                      Auto-filled from address (2-letter code)
+                      Auto-filled from address or search by name/code
                     </FormDescription>
                     <FormMessage />
                   </FormItem>

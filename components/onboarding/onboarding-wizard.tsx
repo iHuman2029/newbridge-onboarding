@@ -22,6 +22,7 @@ export function OnboardingWizard({
   const {
     currentStep,
     completedSteps,
+    setCurrentStep,
     nextStep,
     prevStep,
     submitForm,
@@ -39,6 +40,10 @@ export function OnboardingWizard({
   const handleComplete = async () => {
     await submitForm();
     onComplete?.();
+  };
+
+  const handleStepClick = (step: number) => {
+    setCurrentStep(step);
   };
 
   // If submitted, don't show the wizard (success screen will be shown)
@@ -72,7 +77,11 @@ export function OnboardingWizard({
         </div>
 
         {/* Progress Indicator */}
-        <FormProgress currentStep={currentStep} completedSteps={completedSteps} />
+        <FormProgress 
+          currentStep={currentStep} 
+          completedSteps={completedSteps}
+          onStepClick={handleStepClick}
+        />
 
         {/* Step Content */}
         <div className="mt-8 animate-in fade-in slide-in-from-right-4 duration-300">
