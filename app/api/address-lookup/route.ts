@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 
+// Force dynamic rendering for this API route
+export const dynamic = 'force-dynamic';
+
 /**
  * Mock address data for demonstration
  * In production, this would integrate with Google Places API, Mapbox, or similar
